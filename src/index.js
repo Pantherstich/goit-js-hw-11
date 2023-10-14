@@ -3,10 +3,24 @@ import "simplelightbox/dist/simple-lightbox.min.css";
 import Notiflix from 'notiflix';
 import axios from 'axios';
 
+async function fetchPixybay (){
+  const params = new URLSearchParams ({
+      key: API_KEY,
+      q: searchQuery,
+      image_type: 'photo',
+      orientation: 'horizontal',
+      safesearch: true,
+      per_page: 40,
+      page: currentPage,
+  });
+  return axios.get(`${BASE_URL}?${params}`);
+}
 
 const lightbox = new SimpleLightbox('.gallery a', {
     close: false,
-    showCounter: false,});
+    showCounter: false,
+    captionsData: 'alt',
+    captionPosition: 'bottom'});
 
 const optionsObserver = {
     root: null,
@@ -35,30 +49,55 @@ async function onLoadMore(entries, observer) {
     if (entry.isIntersecting) {
       currentPage += 1;
 
-      fetchPixybay().then(resp =>{
-  Notiflix.notify.info(
-    `Hooray! We found ${resp.data.totalHits} images.`
-  );
+        fetchPixybay().then( response => {
+          Notiflix.Notify.info(
+            `Hooray! We found ${response.data.totalHits - currentPage * 40} images.`
+          );
+        refs.gallery.insertAdjacentHTML('beforeend', createMarkup(response.data.hits));
+        lightbox.refresh();
 
-  refs.gallery.insertAdjacentHTML('beforeend', createMarkup(resp.data.hits));
-  lightbox.refresh();
-  const { height: cardHeight } =
-            refs.gallery.firstElementChild.getBoundingClientRect();
+        const { height: cardHeight } =
+        refs.gallery.firstElementChild.getBoundingClientRect();
+        window.scrollBy({
+          top: cardHeight * 2,
+          behavior: 'smooth',
+        });
 
-            window.scrollBy({
-              top: cardHeight * 2,
-              behavior: "smooth",
-            });
-
-            if (currentPage * 40 >= resp.data.totalHits) {
-              observer.unobserve(refs.result);
-            }
-          })
-          .catch(err => console.log(err));
-
-      }
-    })
+     if (currentPage * 40 >= response.data.totalHits) {
+            observer.unobserve(refs.result);
+          }
+  }).catch(error => console(error)) ;
 }
+  });
+}
+
+
+  //   if (entry.isIntersecting) {
+  //     currentPage += 1;
+
+  //     fetchPixybay().then(resp =>{
+  // Notiflix.notify.info(
+  //   `Hooray! We found ${resp.data.totalHits} images.`
+  // );
+
+  // refs.gallery.insertAdjacentHTML('beforeend', createMarkup(resp.data.hits));
+  // lightbox.refresh();
+  // const { height: cardHeight } =
+  //           refs.gallery.firstElementChild.getBoundingClientRect();
+
+  //           window.scrollBy({
+  //             top: cardHeight * 2,
+  //             behavior: "smooth",
+  //           });
+
+  //           if (currentPage * 40 >= resp.data.totalHits) {
+  //             observer.unobserve(refs.result);
+  //           }
+  //         })
+  //         .catch(err => console.log(err));
+
+  //     }}
+
 
 
 
@@ -72,6 +111,7 @@ return;
 }
 
 const response = await fetchPixybay ()
+// console.log(response);
 const dataHits = response.data.hits;
 
 if (dataHits.length === 0){
@@ -85,18 +125,6 @@ observer.observe(refs.result);
 refs.searchForm.reset();
 }
 
-function fetchPixybay (){
-    const params = new URLSearchParams ({
-        key: API_KEY,
-        q: searchQuery,
-        image_type: 'photo',
-        orientation: 'horizontal',
-        safesearch: true,
-        per_page: 40,
-        page: currentPage,
-    });
-    return axios.get(`${BASE_URL}?${params}`);
-  }
 
 function createMarkup(arr) {
   return arr
