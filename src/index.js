@@ -72,35 +72,6 @@ async function onLoadMore(entries, observer) {
 }
 
 
-  //   if (entry.isIntersecting) {
-  //     currentPage += 1;
-
-  //     fetchPixybay().then(resp =>{
-  // Notiflix.notify.info(
-  //   `Hooray! We found ${resp.data.totalHits} images.`
-  // );
-
-  // refs.gallery.insertAdjacentHTML('beforeend', createMarkup(resp.data.hits));
-  // lightbox.refresh();
-  // const { height: cardHeight } =
-  //           refs.gallery.firstElementChild.getBoundingClientRect();
-
-  //           window.scrollBy({
-  //             top: cardHeight * 2,
-  //             behavior: "smooth",
-  //           });
-
-  //           if (currentPage * 40 >= resp.data.totalHits) {
-  //             observer.unobserve(refs.result);
-  //           }
-  //         })
-  //         .catch(err => console.log(err));
-
-  //     }}
-
-
-
-
 async function onSearch (event){
 event.preventDefault();
 let currentPage = 1;
@@ -111,7 +82,6 @@ return;
 }
 
 const response = await fetchPixybay ()
-// console.log(response);
 const dataHits = response.data.hits;
 
 if (dataHits.length === 0){
