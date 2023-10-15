@@ -51,7 +51,9 @@ async function onLoadMore(entries, observer) {
 
         fetchPixybay().then( response => {
           Notiflix.Notify.info(
-            `Hooray! We found ${response.data.totalHits - currentPage * 40} images.`
+            `Hooray! We found ${resp.data.totalHits - currentPage * 40} images.`,
+            {position: 'right-top',
+            borderRadius: '20px',}
           );
         refs.gallery.insertAdjacentHTML('beforeend', createMarkup(response.data.hits));
         lightbox.refresh();
@@ -77,7 +79,10 @@ event.preventDefault();
 let currentPage = 1;
 searchQuery =refs.searchForm.elements.searchQuery.value;
 if (searchQuery.trim() === ''){
-Notiflix.Notify.warning('Emty query, enter your reqest');
+Notiflix.Notify.warning('Emty query, enter your reqest',
+{position: 'center-top',
+distance: '64px',
+borderRadius: '10px',});
 return;
 }
 
@@ -85,7 +90,11 @@ const response = await fetchPixybay ()
 const dataHits = response.data.hits;
 
 if (dataHits.length === 0){
-Notiflix.Notify.failure('Sorry, there are no images matching your search query. Please try again.');
+Notiflix.Notify.failure('Sorry, there are no images matching your search query. Please try again.',
+{position: 'center-top',
+distance: '64px',
+
+borderRadius: '30px',});
 return;
 }
 refs.gallery.innerHTML = createMarkup(dataHits);
