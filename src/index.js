@@ -50,11 +50,10 @@ async function onLoadMore(entries, observer) {
       currentPage += 1;
 
         fetchPixybay().then( response => {
-          Notiflix.Notify.info(
-            `Hooray! We found ${resp.data.totalHits - currentPage * 40} images.`,
-            {position: 'right-top',
-            borderRadius: '20px',}
-          );
+          // Notiflix.Notify.info(
+          //   `Hooray! We found ${response.data.totalHits - currentPage *40 } images.`
+          // );
+
         refs.gallery.insertAdjacentHTML('beforeend', createMarkup(response.data.hits));
         lightbox.refresh();
 
@@ -67,8 +66,9 @@ async function onLoadMore(entries, observer) {
 
      if (currentPage * 40 >= response.data.totalHits) {
             observer.unobserve(refs.result);
-          }
-  }).catch(error => console(error)) ;
+          } else totalHitsNotify(response.data.totalHits - currentPage *40 )
+
+  }).catch(error => console.log(error)) ;
 }
   });
 }
@@ -98,6 +98,7 @@ borderRadius: '30px',});
 return;
 }
 refs.gallery.innerHTML = createMarkup(dataHits);
+totalHitsNotify(response.data.totalHits);
 lightbox.refresh();
 observer.observe(refs.result);
 
@@ -138,4 +139,10 @@ function createMarkup(arr) {
 </div>`
     )
     .join('');
+}
+
+function totalHitsNotify (totalHits){
+Notiflix.Notify.info(
+  `Hooray! We found ${totalHits} images.`
+);
 }
