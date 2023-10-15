@@ -98,7 +98,17 @@ borderRadius: '30px',});
 return;
 }
 refs.gallery.innerHTML = createMarkup(dataHits);
-totalHitsNotify(response.data.totalHits);
+Notiflix.Notify.info(
+  `Hooray! We found ${response.data.totalHits} images.`,
+  {
+    position: 'center-top',
+  distance: '64px',
+  borderRadius: '10px',
+}
+);
+
+
+
 lightbox.refresh();
 observer.observe(refs.result);
 
