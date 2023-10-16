@@ -1,20 +1,8 @@
 import SimpleLightbox from "simplelightbox";
 import "simplelightbox/dist/simple-lightbox.min.css";
 import Notiflix from 'notiflix';
-import axios from 'axios';
 
-async function fetchPixybay (){
-  const params = new URLSearchParams ({
-      key: API_KEY,
-      q: searchQuery,
-      image_type: 'photo',
-      orientation: 'horizontal',
-      safesearch: true,
-      per_page: 40,
-      page: currentPage,
-  });
-  return axios.get(`${BASE_URL}?${params}`);
-}
+import fetchPixybay from './apiPixaby';
 
 const lightbox = new SimpleLightbox('.gallery a', {
     close: false,
@@ -33,10 +21,6 @@ const refs = {
     gallery: document.querySelector('.gallery'),
     result: document.querySelector('.res-js')
 };
-
-const API_KEY = '39907244-c493ee587f7162aad68ea1179';
-const BASE_URL = 'https://pixabay.com/api/';
-
 refs.searchForm.addEventListener('submit', onSearch);
 
 let observer = new IntersectionObserver(onLoadMore, optionsObserver);
@@ -49,11 +33,8 @@ async function onLoadMore(entries, observer) {
     if (entry.isIntersecting) {
       currentPage += 1;
 
-        fetchPixybay().then( response => {
-          // Notiflix.Notify.info(
-          //   `Hooray! We found ${response.data.totalHits - currentPage *40 } images.`
-          // );
-
+        fetchPixybay(searchQuery,currentPage).then( response => {
+        
         refs.gallery.insertAdjacentHTML('beforeend', createMarkup(response.data.hits));
         lightbox.refresh();
 
@@ -69,6 +50,7 @@ async function onLoadMore(entries, observer) {
           } else totalHitsNotify(response.data.totalHits - currentPage *40 )
 
   }).catch(error => console.log(error)) ;
+
 }
   });
 }
@@ -76,7 +58,7 @@ async function onLoadMore(entries, observer) {
 
 async function onSearch (event){
 event.preventDefault();
-let currentPage = 1;
+currentPage = 1;
 searchQuery =refs.searchForm.elements.searchQuery.value;
 if (searchQuery.trim() === ''){
 Notiflix.Notify.warning('Emty query, enter your reqest',
@@ -86,7 +68,7 @@ borderRadius: '10px',});
 return;
 }
 
-const response = await fetchPixybay ()
+const response = await fetchPixybay (searchQuery,currentPage)
 const dataHits = response.data.hits;
 
 if (dataHits.length === 0){
@@ -98,6 +80,7 @@ borderRadius: '30px',});
 return;
 }
 refs.gallery.innerHTML = createMarkup(dataHits);
+
 Notiflix.Notify.info(
   `Hooray! We found ${response.data.totalHits} images.`,
   {
@@ -113,6 +96,7 @@ lightbox.refresh();
 observer.observe(refs.result);
 
 refs.searchForm.reset();
+
 }
 
 
