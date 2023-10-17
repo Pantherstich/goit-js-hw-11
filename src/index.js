@@ -65,7 +65,8 @@ Notiflix.Notify.warning('Emty query, enter your reqest',
 {position: 'center-top',
 distance: '64px',
 borderRadius: '10px',});
-  refs.gallery.innerHTML = '';
+  // refs.gallery.innerHTML = '';
+ currentPage = 1; 
 return;
 }
 
