@@ -23,65 +23,66 @@ const refs = {
 };
 refs.searchForm.addEventListener('submit', onSearch);
 
-let observer = new IntersectionObserver(onLoadMore, optionsObserver);
-let currentPage = 1;
+// let observer = new IntersectionObserver(onLoadMore, optionsObserver);
+let currentPage = 0;
 let searchQuery;
+let lastItem;
+let totalPages = 1;
+
 
 
 async function onLoadMore(entries, observer) {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      currentPage += 1;
+  for (const entry of entries) {
+       if (totalPages > 1) {
+        if (entry.isIntersecting) {
+          try {
+            const response = await fetchPixybay(searchQuery,currentPage)
+            refs.gallery.insertAdjacentHTML('beforeend', createMarkup(response.data.hits));
+            lightbox.refresh();
+            const { height: cardHeight } =
+            refs.gallery.firstElementChild.getBoundingClientRect();
+            window.scrollBy({
+            top: cardHeight * 2,
+            behavior: 'smooth',});
+            currentPage += 1;
 
-        fetchPixybay(searchQuery,currentPage).then( response => {
-        
-        refs.gallery.insertAdjacentHTML('beforeend', createMarkup(response.data.hits));
-        lightbox.refresh();
-
-        const { height: cardHeight } =
-        refs.gallery.firstElementChild.getBoundingClientRect();
-        window.scrollBy({
-          top: cardHeight * 2,
-          behavior: 'smooth',
-        });
-
-     if (currentPage * 40 >= response.data.totalHits) {
-            observer.unobserve(refs.result);
-          } else totalHitsNotify(response.data.totalHits - currentPage *40 )
-
-  }).catch(error => console.log(error)) ;
-
-}
-  });
-}
-
+            if (currentPage < totalPages) {
+              lastItem = document.querySelector('.photo-card:last-child');
+              observer.unobserve(entry.result);
+              observer.observe(entry.lastItem);
+            } else  observer.unobserve(entry.result);
+            } catch (error) {console.log('error')} ;
+            }
+        };
+      }
+    }
 
 async function onSearch (event){
 event.preventDefault();
 currentPage = 1;
 searchQuery =refs.searchForm.elements.searchQuery.value;
-if (searchQuery.trim() === ''){
-Notiflix.Notify.warning('Emty query, enter your reqest',
-{position: 'center-top',
-distance: '64px',
-borderRadius: '10px',});
- // refs.gallery.innerHTML = '';
-return;
-}
-
 const response = await fetchPixybay (searchQuery,currentPage)
 const dataHits = response.data.hits;
+if (searchQuery.trim() === ''){
+          Notiflix.Notify.warning('Emty query, enter your reqest',
+                                  {position: 'center-top',
+                                  distance: '64px',
+                                  borderRadius: '10px',});
+          refs.gallery.innerHTML = '';
+          return;
+                             }
 
 if (dataHits.length === 0){
-Notiflix.Notify.failure('Sorry, there are no images matching your search query. Please try again.',
-{position: 'center-top',
-distance: '64px',
-
-borderRadius: '30px',});
-//  refs.gallery.innerHTML = '';
-return;
-}
+          Notiflix.Notify.failure('Sorry, there are no images matching your search query. Please try again.',
+                                  {position: 'center-top',
+                                  distance: '64px',
+                                  borderRadius: '30px',});
+           refs.gallery.innerHTML = '';
+          return;
+                          }
+          else {
 refs.gallery.innerHTML = createMarkup(dataHits);
+totalPages = Math.ceil(response.data.totalHits / 40);
 
 Notiflix.Notify.info(
   `Hooray! We found ${response.data.totalHits} images.`,
@@ -91,13 +92,13 @@ Notiflix.Notify.info(
   borderRadius: '10px',
 }
 );
-
-
-
+infiniteScroll();
 lightbox.refresh();
-observer.observe(refs.result);
-
 refs.searchForm.reset();
+// observer.observe(response);
+
+
+}
 
 }
 
@@ -141,4 +142,9 @@ function totalHitsNotify (totalHits){
 Notiflix.Notify.info(
   `Hooray! We found ${totalHits} images.`
 );
+}
+function infiniteScroll() {
+  const observer = new IntersectionObserver(onLoadMore, optionsObserver);
+  lastItem = document.querySelector('.photo-card:last-child');
+  observer.observe(lastItem);
 }
