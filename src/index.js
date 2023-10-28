@@ -1,8 +1,7 @@
 import SimpleLightbox from "simplelightbox";
 import "simplelightbox/dist/simple-lightbox.min.css";
 import Notiflix from 'notiflix';
-
-import fetchPixybay from './apiPixaby';
+import {fetchPixybay} from './apiPixaby';
 
 const lightbox = new SimpleLightbox('.gallery a', {
     close: false,
@@ -23,85 +22,67 @@ const refs = {
 };
 refs.searchForm.addEventListener('submit', onSearch);
 
-// let observer = new IntersectionObserver(onLoadMore, optionsObserver);
-let currentPage = 0;
-let searchQuery;
-let lastItem;
-let totalPages = 1;
+let observer = new IntersectionObserver(onLoadMore, optionsObserver);
+
+let currentPage = 1;
+let per_page = 40;
+let searchQuery="";
 
 
 
-async function onLoadMore(entries, observer) {
-  for (const entry of entries) {
-       if (totalPages > 1) {
+function onLoadMore(entries, observer) {
+  entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          try {
-            const response = await fetchPixybay(searchQuery,currentPage)
-            refs.gallery.insertAdjacentHTML('beforeend', createMarkup(response.data.hits));
-            lightbox.refresh();
-            const { height: cardHeight } =
-            refs.gallery.firstElementChild.getBoundingClientRect();
-            window.scrollBy({
-            top: cardHeight * 2,
-            behavior: 'smooth',});
             currentPage += 1;
-
-            if (currentPage < totalPages) {
-              lastItem = document.querySelector('.photo-card:last-child');
-              observer.unobserve(entry.result);
-              observer.observe(entry.lastItem);
-            } else  observer.unobserve(entry.result);
-            } catch (error) {console.log('error')} ;
+            fetchPixybay(searchQuery,currentPage, per_page)
+            .then(({hits, totalHits}) => {
+            refs.gallery.insertAdjacentHTML('beforeend', createMarkup(hits));
+            lightbox.refresh();
+          if (currentPage >= totalHits/per_page) {
+              observer.unobserve(refs.result);
             }
-        };
+          })
+            .catch ((error) => console.log(error)) ;
+            }
+        });
       }
-    }
 
-async function onSearch (event){
+function onSearch (event){
 event.preventDefault();
 currentPage = 1;
-searchQuery =refs.searchForm.elements.searchQuery.value;
-const response = await fetchPixybay (searchQuery,currentPage)
-const dataHits = response.data.hits;
-if (searchQuery.trim() === ''){
+refs.gallery.innerHTML = "";
+observer.unobserve(refs.result);
+searchQuery =refs.searchForm.elements.searchQuery.value.trim();
+if (searchQuery === ''){
           Notiflix.Notify.warning('Emty query, enter your reqest',
                                   {position: 'center-top',
                                   distance: '64px',
                                   borderRadius: '10px',});
-          refs.gallery.innerHTML = '';
-          return;
-                             }
-
-if (dataHits.length === 0){
+          return; }
+fetchPixybay(searchQuery,currentPage, per_page)
+.then(({hits, totalHits}) => {
+    if (hits.length === 0){
           Notiflix.Notify.failure('Sorry, there are no images matching your search query. Please try again.',
                                   {position: 'center-top',
                                   distance: '64px',
                                   borderRadius: '30px',});
-           refs.gallery.innerHTML = '';
           return;
-                          }
-          else {
-refs.gallery.innerHTML = createMarkup(dataHits);
-totalPages = Math.ceil(response.data.totalHits / 40);
-
-Notiflix.Notify.info(
-  `Hooray! We found ${response.data.totalHits} images.`,
+    }
+refs.gallery.innerHTML = createMarkup(hits);
+lightbox.refresh();
+observer.observe(refs.result);
+  })
+.catch((error) => {
+console.log(error);
+Notiflix.Notify.failure(
+  `Something went wrong. Please try again.`,
   {
     position: 'center-top',
   distance: '64px',
   borderRadius: '10px',
 }
-);
-infiniteScroll();
-lightbox.refresh();
-refs.searchForm.reset();
-// observer.observe(response);
-
-
-}
-
-}
-
+);});
+};
 
 function createMarkup(arr) {
   return arr
@@ -138,13 +119,21 @@ function createMarkup(arr) {
     .join('');
 }
 
-function totalHitsNotify (totalHits){
-Notiflix.Notify.info(
-  `Hooray! We found ${totalHits} images.`
-);
+
+window.addEventListener('scroll', toggleScrollToTopBtn);
+function toggleScrollToTopBtn() {
+  if (window.scrollY > 300) {
+    scrollToTopBtn.style.display = 'block';
+  } else {
+    scrollToTopBtn.style.display = 'none';
+  }
 }
-function infiniteScroll() {
-  const observer = new IntersectionObserver(onLoadMore, optionsObserver);
-  lastItem = document.querySelector('.photo-card:last-child');
-  observer.observe(lastItem);
+
+scrollToTopBtn.addEventListener('click', scrollToTop);
+
+function scrollToTop() {
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth',
+  });
 }
